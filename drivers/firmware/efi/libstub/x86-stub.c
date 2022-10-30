@@ -162,6 +162,51 @@ free_handle:
 	efi_bs_call(free_pool, pci_handle);
 }
 
+static efi_status_t apple_set_os()
+{
+	apple_set_os_protocol_t *set_os;
+	efi_guid_t set_os_guid = APPLE_SET_OS_PROTOCOL_GUID;
+	efi_status_t status;
+	void **handles;
+	unsigned long i, nr_handles, size = 0;
+
+	status = efi_bs_call(locate_handle, EFI_LOCATE_BY_PROTOCOL, &set_os_guid, NULL, &size, handles);
+
+	if (status == EFI_BUFFER_TOO_SMALL) {
+		status = efi_bs_call(allocate_pool, EFI_LOADER_DATA, size, &handles);
+
+		if (status != EFI_SUCCESS)
+			return status;
+
+		status = efi_bs_call(locate_handle, EFI_LOCATE_BY_PROTOCOL, &set_os_guid, NULL, &size, handles);
+	}
+
+	if (status != EFI_SUCCESS)
+		goto free_handle;
+
+	nr_handles = size / sizeof(void *);
+	for (i = 0; i < nr_handles; i++) {
+		void *h = handles[i];
+
+		status = efi_bs_call(handle_protocol, h, &set_os_guid, &set_os);
+
+		if (status != EFI_SUCCESS || !set_os)
+			continue;
+
+		if (set_os->version > 0) {
+			set_os->set_os_version("Mac OS X 10.9");
+		}
+
+		if (set_os->version >= 2) {
+			set_os->set_os_vendor("Apple Inc.");
+		}
+	}
+
+free_handle:
+	efi_bs_call(free_pool, handles);
+	return status;
+}
+
 static void retrieve_apple_device_properties(struct boot_params *boot_params)
 {
 	efi_guid_t guid = APPLE_PROPERTIES_PROTOCOL_GUID;
@@ -320,6 +365,8 @@ static void setup_quirks(struct boot_params *boot_params,
 		efi_table_attr(efi_system_table, fw_vendor);
 
 	if (!memcmp(fw_vendor, apple, sizeof(apple))) {
+		apple_set_os();
+
 		if (IS_ENABLED(CONFIG_APPLE_PROPERTIES))
 			retrieve_apple_device_properties(boot_params);
 	}

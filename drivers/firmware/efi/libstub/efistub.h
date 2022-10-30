@@ -750,6 +750,14 @@ union apple_properties_protocol {
 	} mixed_mode;
 };
 
+typedef struct apple_set_os_protocol apple_set_os_protocol_t;
+
+struct apple_set_os_protocol {
+	u64 version;
+	void (__efiapi *set_os_version) (const char *os_version);
+	void (__efiapi *set_os_vendor) (const char *os_vendor);
+};
+
 typedef u32 efi_tcg2_event_log_format;
 
 #define INITRD_EVENT_TAG_ID 0x8F3B22ECU
