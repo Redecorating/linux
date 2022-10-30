@@ -59,6 +59,19 @@ static void quirk_increase_ddi_disabled_time(struct drm_i915_private *i915)
 	drm_info(&i915->drm, "Applying Increase DDI Disabled quirk\n");
 }
 
+/*
+ * In some cases, the BIOS might not set the lane count to 4 or set it in a way
+ * i915 cannot understand (for example when booting in dual GPU Macs with the
+ * dGPU as the default GPU), this quirk is used to force it as otherwise it
+ * might not be possible to compute a valid link configuration
+ */
+static void quirk_ddi_a_force_4_lanes(struct drm_i915_private* i915)
+{
+	i915->quirks |= QUIRK_DDI_A_FORCE_4_LANES;
+	drm_info(&i915->drm, "Applying Force DDI A 4 Lanes quirk\n");
+}
+
+
 static void quirk_no_pps_backlight_power_hook(struct drm_i915_private *i915)
 {
 	intel_set_quirk(i915, QUIRK_NO_PPS_BACKLIGHT_POWER_HOOK);
@@ -199,6 +212,9 @@ static struct intel_quirk intel_quirks[] = {
 	/* ECS Liva Q2 */
 	{ 0x3185, 0x1019, 0xa94d, quirk_increase_ddi_disabled_time },
 	{ 0x3184, 0x1019, 0xa94d, quirk_increase_ddi_disabled_time },
+
+	/* Apple MacBookPro 15,1 */
+	{ 0x3e9b, 0x106b, 0x0176, quirk_ddi_a_force_4_lanes },
 };
 
 void intel_init_quirks(struct drm_i915_private *i915)

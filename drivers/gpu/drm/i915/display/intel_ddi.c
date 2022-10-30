@@ -4076,6 +4076,9 @@ static bool intel_ddi_a_force_4_lanes(struct intel_digital_port *dig_port)
 	if (dig_port->saved_port_bits & DDI_A_4_LANES)
 		return false;
 
+	if (dev_priv->quirks & QUIRK_DDI_A_FORCE_4_LANES)
+		return true;
+
 	/* Broxton/Geminilake: Bspec says that DDI_A_4_LANES is the only
 	 *                     supported configuration
 	 */
