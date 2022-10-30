@@ -67,7 +67,7 @@ static void quirk_increase_ddi_disabled_time(struct drm_i915_private *i915)
  */
 static void quirk_ddi_a_force_4_lanes(struct drm_i915_private* i915)
 {
-	i915->quirks |= QUIRK_DDI_A_FORCE_4_LANES;
+	intel_set_quirk(i915, QUIRK_DDI_A_FORCE_4_LANES);
 	drm_info(&i915->drm, "Applying Force DDI A 4 Lanes quirk\n");
 }
 
