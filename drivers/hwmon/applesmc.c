@@ -1556,7 +1556,7 @@ static ssize_t applesmc_key_at_index_show(struct device *dev,
 {
 	struct applesmc_device *smc = dev_get_drvdata(dev);
 
-	return sysfs_emit(sysfsbuf, PAGE_SIZE, "%d\n", smc->key_at_index);
+	return sysfs_emit(sysfsbuf, "%d\n", smc->key_at_index);
 }
 
 static ssize_t applesmc_key_at_index_store(struct device *dev,
