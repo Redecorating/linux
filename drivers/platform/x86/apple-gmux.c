@@ -139,13 +139,7 @@ static u32 gmux_pio_read32(struct apple_gmux_data *gmux_data, int port)
 static void gmux_pio_write32(struct apple_gmux_data *gmux_data, int port,
 			     u32 val)
 {
-	int i;
-	u8 tmpval;
-
-	for (i = 0; i < 4; i++) {
-		tmpval = (val >> (i * 8)) & 0xff;
-		outb(tmpval, gmux_data->iostart + port + i);
-	}
+	outl(cpu_to_be32(val), gmux_data->iostart + port);
 }
 
 static int gmux_index_wait_ready(struct apple_gmux_data *gmux_data)
@@ -222,16 +216,8 @@ static u32 gmux_index_read32(struct apple_gmux_data *gmux_data, int port)
 static void gmux_index_write32(struct apple_gmux_data *gmux_data, int port,
 			       u32 val)
 {
-	int i;
-	u8 tmpval;
-
 	mutex_lock(&gmux_data->index_lock);
-
-	for (i = 0; i < 4; i++) {
-		tmpval = (val >> (i * 8)) & 0xff;
-		outb(tmpval, gmux_data->iostart + GMUX_PORT_VALUE + i);
-	}
-
+	outl(cpu_to_be32(val), gmux_data->iostart + GMUX_PORT_VALUE);
 	gmux_index_wait_ready(gmux_data);
 	outb(port & 0xff, gmux_data->iostart + GMUX_PORT_WRITE);
 	gmux_index_wait_complete(gmux_data);
