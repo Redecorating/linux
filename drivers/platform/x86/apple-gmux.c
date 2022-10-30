@@ -22,6 +22,7 @@
 #include <linux/delay.h>
 #include <linux/pci.h>
 #include <linux/vga_switcheroo.h>
+#include <linux/vgaarb.h>
 #include <asm/io.h>
 
 /**
@@ -45,6 +46,10 @@
  * .. _Renesas R4F2113:
  *     http://www.renesas.com/products/mpumcu/h8s/h8s2100/h8s2113/index.jsp
  */
+
+static char apple_gmux_force_gpu[4] = "";
+module_param_string(force_gpu, apple_gmux_force_gpu, sizeof(apple_gmux_force_gpu), 0);
+MODULE_PARM_DESC(force_gpu, "The GPU to switch to on boot (only for T2 Macs)");
 
 struct apple_gmux_type;
 
@@ -886,6 +891,31 @@ static int gmux_probe(struct pnp_dev *pnp, const struct pnp_device_id *id)
 	gmux_enable_interrupts(gmux_data);
 	gmux_read_switch_state(gmux_data);
 
+	if (is_mem && strlen(apple_gmux_force_gpu)) {
+		struct pci_dev *pdev;
+		enum vga_switcheroo_client_id id;
+
+		if (!strcmp(apple_gmux_force_gpu, "IGD")) {
+			pdev = pci_get_domain_bus_and_slot(0, 0, PCI_DEVFN(2, 0));
+			id = VGA_SWITCHEROO_IGD;
+		} else if (!strcmp(apple_gmux_force_gpu, "DIS")) {
+			pdev = pci_get_domain_bus_and_slot(0, 1, PCI_DEVFN(0, 0));
+			id = VGA_SWITCHEROO_DIS;
+		} else {
+			pr_err("force_gpu can only be set to DIS and IGD (currently %s)", apple_gmux_force_gpu);
+			goto switch_end;
+		}
+
+		if (pdev) {
+			pr_info("Switching to %s", apple_gmux_force_gpu);
+			gmux_switchto(id);
+			vga_set_default_device(pdev);
+		} else {
+			pr_err("force_gpu is %s but the %cGPU is not present!", apple_gmux_force_gpu, apple_gmux_force_gpu[0] + 32);
+		}
+	}
+
+switch_end:
 	/*
 	 * Retina MacBook Pros cannot switch the panel's AUX separately
 	 * and need eDP pre-calibration. They are distinguishable from
